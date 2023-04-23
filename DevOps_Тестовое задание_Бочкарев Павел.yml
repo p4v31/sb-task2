@@ -1,0 +1,114 @@
+---
+- name: Safeboard 2nd task
+  hosts: localhost
+  become: yes
+  tasks:
+    - name: Add Docker GPG key
+      ansible.builtin.apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_lsb.codename }} stable"
+        state: present
+
+    - name: Install Docker
+      ansible.builtin.apt:
+        name: docker-ce
+        update_cache: yes
+        state: latest
+
+    - name: Install dependencies
+      apt:
+        name: "{{ packages }}"
+        update_cache: yes
+      vars:
+        packages:
+          - apt-transport-https
+          - ca-certificates
+          - conntrack
+          - curl
+
+    - name: Install crictl
+      get_url:
+        url: https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.23.0/crictl-v1.23.0-linux-amd64.tar.gz
+        dest: /tmp/crictl.tar.gz
+
+    - name: Extract crictl
+      unarchive:
+        src: /tmp/crictl.tar.gz
+        dest: /usr/local/bin
+        remote_src: yes
+
+    - name: Set fs.protected_regular to 0
+      ansible.builtin.sysctl:
+        name: fs.protected_regular
+        value: "0"
+        sysctl_set: yes
+        state: present
+        reload: yes
+
+    - name: Install minikube
+      get_url:
+        url: https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        dest: /usr/local/bin/minikube
+        mode: 0755
+
+    - name: Delete existing minikube cluster
+      command: minikube delete
+      ignore_errors: yes
+
+    - name: Start minikube
+      command: minikube start --driver=docker
+      become: no
+
+    - name: Get latest kubectl version
+      ansible.builtin.shell: >
+        curl -s
+        https://storage.googleapis.com/kubernetes-release/release/stable.txt
+      args:
+        executable: /bin/bash
+      register: kubectl_latest_version
+      changed_when: false
+
+    - name: Install apt-transport-https
+      apt:
+        name: apt-transport-https
+        state: present
+      become: yes
+
+    - name: Clone kubernetes/examples repository
+      ansible.builtin.git:
+        repo: 'https://github.com/kubernetes/examples.git'
+        dest: examples
+
+    - name: Create Kubernetes resources if they don't exist
+      ansible.builtin.command:
+        cmd: 'minikube kubectl -- apply -f {{ item }}'
+      loop:
+        - redis-master-controller.yaml
+        - redis-master-service.yaml
+        - redis-replica-controller.yaml
+        - redis-replica-service.yaml
+        - guestbook-controller.yaml
+        - guestbook-service.yaml
+      args:
+        chdir: examples/guestbook-go
+      become: no
+
+    - name: Create keep_guestbook_running.sh script
+      ansible.builtin.copy:
+        content: |
+          #!/bin/bash
+
+          while true; do
+            minikube kubectl port-forward service/guestbook 3001:3000
+            sleep 1
+          done
+        dest: /usr/local/bin/keep_guestbook_running.sh
+        mode: 0755
+
+    - name: Start port-forwarding in the background
+      ansible.builtin.shell: "nohup /usr/local/bin/keep_guestbook_running.sh >/dev/null 2>&1 &"
+      become: no
