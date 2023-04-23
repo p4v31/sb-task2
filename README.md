@@ -44,6 +44,34 @@ ansible-playbook test.yaml -K
 <img width="468" alt="image" src="https://user-images.githubusercontent.com/90404785/233844806-dd0b7a93-77a2-4bb3-9a76-9e20697450e3.png">
 
 # Описание плейбука подробное
+
+Вот подробное описание каждой таски в данном плейбуке Ansible:
+
+1. **Add Docker GPG key**: Эта таска добавляет GPG-ключ репозитория Docker, чтобы система могла проверять подпись пакетов перед установкой. Это делается с использованием модуля `ansible.builtin.apt_key`.
+
+2. **Add Docker repository**: Таска добавляет репозиторий Docker в список репозиториев системы. Это позволяет системе получать обновления и устанавливать Docker из официального репозитория. Это делается с использованием модуля `ansible.builtin.apt_repository`.
+
+3. **Install Docker**: Таска устанавливает последнюю версию Docker на целевом хосте. Это делается с использованием модуля `ansible.builtin.apt`.
+
+4. **Install dependencies**: Таска устанавливает зависимости, необходимые для работы Docker, crictl и kubectl. Зависимости устанавливаются с использованием модуля `apt`.
+
+5. **Install crictl**: Таска загружает архив crictl (инструмент для взаимодействия с CRI) из указанного URL и сохраняет его в /tmp/crictl.tar.gz на целевом хосте. Это делается с использованием модуля `get_url`.
+
+6. **Extract crictl**: Таска извлекает crictl из архива в /tmp/crictl.tar.gz и устанавливает его в /usr/local/bin на целевом хосте. Это делается с использованием модуля `unarchive`.
+
+7. **Set fs.protected_regular to 0**: Таска устанавливает значение параметра ядра `fs.protected_regular` равным 0. Это делается с использованием модуля `ansible.builtin.sysctl`.
+
+8. **Install minikube**: Таска загружает исполняемый файл minikube и устанавливает его в /usr/local/bin на целевом хосте. Это делается с использованием модуля `get_url`.
+
+9. **Delete existing minikube cluster**: Таска удаляет существующий кластер minikube, если он есть. Это делается с использованием модуля `command`.
+
+10. **Start minikube**: Таска запускает minikube с использованием драйвера Docker. Это делается с использованием модуля `command`.
+
+11. **Get latest kubectl version**: Таска определяет последнюю версию kubectl, запрашивая данные с удаленного сервера. Это делается с использованием модуля `ansible.builtin.shell`.
+
+12. **Clone kubernetes/examples repository**: Таска клонирует репозиторий kubernetes/examples на целевой хост. Это делается с использованием модуля `ansible.builtin.git`.
+
+13. **Create Kubernetes resources if they don't
 ```
 - name: Safeboard 2nd task
   hosts: localhost
