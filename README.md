@@ -71,7 +71,12 @@ ansible-playbook test.yaml -K
 
 12. **Clone kubernetes/examples repository**: Таска клонирует репозиторий kubernetes/examples на целевой хост. Это делается с использованием модуля `ansible.builtin.git`.
 
-13. **Create Kubernetes resources if they don't
+13. **Create Kubernetes resources if they don't exist**: Таска применяет файлы конфигурации для развертывания ресурсов Kubernetes (Redis и Guestbook) в кластере minikube. Если ресурсы уже существуют, они не будут изменены. Это делается с использованием модуля `ansible.builtin.command` и цикла `loop`.
+
+14. **Create keep_guestbook_running.sh script**: Таска создает скрипт keep_guestbook_running.sh, который будет выполнять перенаправление портов для сервиса Guestbook с порта 3000 на порт 3001. Это делается с использованием модуля `ansible.builtin.copy`.
+
+15. **Start port-forwarding in the background**: Таска запускает скрипт keep_guestbook_running.sh в фоновом режиме, чтобы обеспечить перенаправление портов для сервиса Guestbook. Это делается с использованием модуля `ansible.builtin.shell`.
+
 ```
 - name: Safeboard 2nd task
   hosts: localhost
